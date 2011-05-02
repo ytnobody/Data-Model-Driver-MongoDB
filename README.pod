@@ -1,0 +1,51 @@
+
+=head1 NAME
+
+Data::Model::Driver::MongoDB - storage driver of Data::Model for MongoDB
+
+=head1 SYNOPSIS
+
+  ### your schema class
+  package Oreore::Schema;
+  use parent qw/ Data::Model /;
+  use Data::Model::Schema;
+  
+  install_model book => schema {
+      key 'id';
+      columns qw/ id name price genre note /;
+  };
+  
+  1;
+
+  ### and use it
+  use Oreore::Schema;
+  use Data::Model::Driver::MongoDB;
+  
+  my $mongo_db = Data::Model::Driver::MongoDB->new( 
+      host => 'localhost',
+      port => 25252,
+      db => 'my_database',
+  );
+  
+  my $schema = Oreore::Schema->new;
+  $schema->set_base_driver( $mongo_db );
+  
+  my $book = $schema->lookup( book => '4dbe781ebbb7f5362f000000' );
+
+
+=head1 DESCRIPTION
+
+Now, it's developing. Some undefined logic is there.
+
+=head1 AUTHOR
+
+ytnobody E<lt>ytnobody@gmail.comE<gt>
+
+=head1 SEE ALSO
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
