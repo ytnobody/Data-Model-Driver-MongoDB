@@ -1,10 +1,21 @@
 use strict;
 use Test::More;
 use Test::Exception;
+use Test::TCP;
+use File::Remove qw/ remove /;
 use FindBin;
 use lib ( "$FindBin::Bin/lib" );
 use MySchema;
 use Data::Model::Driver::MongoDB;
+
+my $mongo_datapath = "$FindBin::Bin/data/db";
+
+my $server = Test::TCP->new( 
+    code => sub {
+        my $port = shift;
+        exec 'mongod', '--dbpath' => $mongo_datapath, '--bind_ip' => '127.0.0.1', '--port' => $port;
+    },
+);
 
 my $mongodb;
 my $c;
@@ -12,6 +23,7 @@ my $c;
 lives_ok {
     $mongodb = Data::Model::Driver::MongoDB->new(
         host => 'localhost',
+        port => $server->port,
         db => 'mytest',
     );
 } 'generating an instance of D::M::D::MongoDB';
@@ -57,5 +69,8 @@ isa_ok $c->get_base_driver, 'Data::Model::Driver::MongoDB';
     } 'lookup a deleted data --- warn, but not die';
     is $res3, undef, 'could not lookup a data';
 }
+
+undef $server;
+remove( \1, $mongo_datapath.'/*.*' );
 
 done_testing();
