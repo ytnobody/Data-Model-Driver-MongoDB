@@ -68,6 +68,8 @@ isa_ok $c->get_base_driver, 'Data::Model::Driver::MongoDB';
         $res3 = $c->lookup( people => $res->id );
     } 'lookup a deleted data --- warn, but not die';
     is $res3, undef, 'could not lookup a data';
+
+    is $c->lookup( people => '123456789' ), undef, 'nothing data with such id';
 }
 
 undef $server;

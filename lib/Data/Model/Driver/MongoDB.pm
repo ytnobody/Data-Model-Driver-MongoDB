@@ -36,12 +36,23 @@ sub _fetch {
     my ( $self, $schema, $query, $multiple ) = @_;
     my $db = $self->{ db };
     my $collection = $schema->model;
-    my $res = $multiple ? $self->connector->$db->$collection->find( $query )->all
-                        : $self->connector->$db->$collection->find_one( $query )
+    my @res = $multiple ? ( $self->connector->$db->$collection->find( $query->{ where } )->all )
+                        : ( $self->connector->$db->$collection->find_one( $query ) )
     ;
-    return unless defined $res;
-    $res->{ $schema->{ key }->[0] } = $res->{ _id }->to_string;
-    return $res;
+    for ( @res ) {
+        next unless $_->{ _id };
+        $_->{ $schema->{ key }->[0] } = $_->{ _id }->to_string ;
+    }
+    my $i = 0;
+    my $iter = sub {
+        return unless defined $res[ $i ];
+        $i++;
+        $res[ $i - 1 ]; 
+    };
+    my $x = $iter->();
+    return unless $x->{ _id };
+    $i = 0;
+    return $multiple ? ( $iter, { end => sub { undef @res } } ) : $res[0];
 }
 
 sub _create_data {
@@ -74,12 +85,12 @@ sub lookup {
 sub lookup_multi {
     my ( $self, $schema, $ids ) = @_;
     my %res;
-    $res{ $_ } = $self->_fetch( $schema, { $schema->{ key }->[0] => $_ } ) for @{ $ids };
+    $res{ $_->[0] } = $self->_fetch( $schema, { $schema->{ key }->[0] => $_->[0] } ) for @{ $ids };
     return \%res;
 }
 
 sub get {
-    my ( $self, $schema, $query ) = @_;
+    my ( $self, $schema, $id, $query ) = @_;
     $self->_fetch( $schema, $query, 1 );
 }
 
@@ -102,15 +113,7 @@ sub update {
 }
 
 sub replace {
-}
-
-sub get_multi {
-}
-
-sub set_multi {
-}
-
-sub delete_multi {
+    Carp::croak "The 'replace' method is not supported by 'Data::Model::Driver::MongoDB'.";
 }
 
 1;
@@ -129,7 +132,7 @@ Data::Model::Driver::MongoDB - storage driver of Data::Model for MongoDB
   
   install_model book => schema {
       key 'id';
-      columns qw/ id name price genre note /;
+      columns qw/ id name author price genre note /;
   };
   
   1;
@@ -146,13 +149,70 @@ Data::Model::Driver::MongoDB - storage driver of Data::Model for MongoDB
   
   my $schema = Oreore::Schema->new;
   $schema->set_base_driver( $mongo_db );
-  
-  my $book = $schema->lookup( book => '4dbe781ebbb7f5362f000000' );
 
+  my $devils_dict = $schema->set( book => { 
+      name => "Devil's dictionary",
+      author => "Ambrose Bierce",
+      price => 700, # <- 700 yen
+      genre => "essay",
+      note => "Virtuoso of short-story who called reincarnation of Poe were represent modern-civilization by edgy satire and biting irony.",
+  } );
+
+  my $id = $devils_dict->id;
+  
+  my $book = $schema->lookup( book => $id );
+  
+  my $iter = $schema->get( book => { where => [ genre => 'novel' ] } );
+  while ( $book = $iter->next ) {
+      print $book->name." / price:". $book->price. "\n";
+  }
 
 =head1 DESCRIPTION
 
 Now, it's developing. Some undefined logic is there.
+
+=head1 DIFFERENCE OF USAGE
+
+D::M::D::MongoDB asks to you compliant to some limitation.
+
+There are attributable to MongoDB specification.
+
+=head2 PRIMARY KEY
+
+You can not *SET* or *WRITE* or *OVERWRITE* value to 1st primary-field. 
+Value in primary-field is set by MongoDB automatically when you set a data into MongoDB.
+
+For example. Following code is not works as expected.
+
+ my $c = MySchema->new;
+ my $mongodb = Data::Model::Driver::MongoDB->new( ... );
+ $c->set_base_driver( $mongodb );
+ my $row = $c->set( people => 'people123456' => { name => 'john', age => 29 } );
+ print $row->id; # like '4dc7b39b73f7b47844000005'
+
+It means, primary-field is read-only and auto-identified.
+
+=head2 "where" SECTION OF get() METHOD
+
+Searching with range of values is not works.
+
+For example. Following code is not works as expected.
+
+ my @rows = $c->get( people => { where => [ age => { '>' => 20 } ] } );
+
+=head1 UNSUPPORTED FUNCTIONS
+
+=over 
+
+=item get_multi
+
+=item delete_multi
+
+=item set_multi
+
+=item replace
+
+=back
 
 =head1 AUTHOR
 
