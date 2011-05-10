@@ -8,8 +8,6 @@ use lib ( "$FindBin::Bin/lib" );
 use MySchema;
 use Data::Model::Driver::MongoDB;
 
-use Data::Dumper;
-
 my $mongo_datapath = "$FindBin::Bin/data/db";
 
 my $server = Test::TCP->new( 

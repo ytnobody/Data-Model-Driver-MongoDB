@@ -7,7 +7,6 @@ use FindBin;
 use lib ( "$FindBin::Bin/lib" );
 use MySchema;
 use Data::Model::Driver::MongoDB;
-use Data::Dumper;
 
 my $mongo_datapath = "$FindBin::Bin/data/db";
 
@@ -64,7 +63,6 @@ $c->set_base_driver( $mongodb );
         isa_ok $_, 'MySchema::people';
         is $_->name, shift @member;
     }
-    warn Dumper( @rows );
 }
 
 {
