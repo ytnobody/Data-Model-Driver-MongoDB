@@ -36,8 +36,8 @@ sub _fetch {
     my ( $self, $schema, $query, $multiple ) = @_;
     my $db = $self->{ db };
     my $collection = $schema->model;
-    my @res = $multiple ? ( $self->connector->$db->$collection->find( $query->{ where } )->all )
-                        : ( $self->connector->$db->$collection->find_one( $query ) )
+    my @res = $multiple ? ( $self->connector->get_database($db)->get_collection($collection)->find( $query->{ where } )->all )
+                        : ( $self->connector->get_database($db)->get_collection($collection)->find_one( $query ) )
     ;
     for ( @res ) {
         next unless $_->{ _id };
@@ -59,21 +59,21 @@ sub _create_data {
     my ( $self, $schema ) = @_;
     my $db = $self->{ db };
     my $collection = $schema->model;
-    $self->connector->$db->$collection->insert( {} );
+    $self->connector->get_database($db)->get_collection($collection)->insert( {} );
 }
 
 sub _update {
     my ( $self, $schema, $query, $columns ) = @_;
     my $db = $self->{ db };
     my $collection = $schema->model;
-    $self->connector->$db->$collection->update( $query, $columns );
+    $self->connector->get_database($db)->get_collection($collection)->update( $query, $columns );
 }
 
 sub _remove_data {
     my ( $self, $schema, $query ) = @_;
     my $db = $self->{ db };
     my $collection = $schema->model;
-    $self->connector->$db->$collection->remove( $query );
+    $self->connector->get_database($db)->get_collection($collection)->remove( $query );
 }
 
 
