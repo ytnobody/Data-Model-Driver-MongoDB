@@ -1,4 +1,10 @@
 
+=begin html 
+
+<p><img src="https://travis-ci.org/ytnobody/Data-Model-Driver-MongoDB.png?branch=master" /></p>
+
+=end html
+
 =head1 NAME
 
 Data::Model::Driver::MongoDB - storage driver of Data::Model for MongoDB
